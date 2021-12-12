@@ -8,7 +8,7 @@ from scipy.linalg import lstsq
 from scipy.sparse.linalg import lsqr,cg,bicg,lgmres,gmres
 
 #用于求解的天空角度划分
-angles_sol=np.linspace(1e-6, np.pi, 40)
+angles_sol=np.linspace(1e-6, np.pi, 20)
 #用于模拟的天空角度划分
 angles_sim=np.linspace(1e-6, np.pi, 1000)
 #频率通道
@@ -64,7 +64,7 @@ Ta=(p_sim@sky_model)*calc_spec_profile(normalized_f, [alpha0, 0])
 
 #alpha=alpha0+0.5
 #待求解alpha的迭代初始值
-alpha=alpha0-1e-4
+alpha=alpha0-0.05
 #beta=0e-6
 coeff=[alpha,0]
 
@@ -95,7 +95,7 @@ for i in range(10000):
     if i%100==0:
         print(coeff, np.mean(solution), resid, resid_min)
 
-
+print(coeff)
 #打印结果、画图
 plt.plot(angles_sol, solution_opt)
 plt.plot(angles_sim, sky_model)
