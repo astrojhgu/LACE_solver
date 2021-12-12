@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import numpy as np
 import astropy.constants
@@ -6,6 +7,9 @@ import astropy.constants
 light_speed=astropy.constants.c.value
 
 def normalized_dipole_beam(theta, freq, length):
+    """
+    返回一个len(freq)行，len(theta)列的二维数组，其第(i,j)号元素的值等于频率freq[i]，方向theta[j]的normalized gain
+    """
     theta=np.atleast_1d(theta)
     freq=np.atleast_1d(freq)
     lbd=light_speed/freq
