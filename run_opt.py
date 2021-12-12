@@ -80,8 +80,7 @@ def split_params(x, beam):
 def fobj(x, *args):
     Ta, beam, normalized_f=args
     sky, spec_param=split_params(x, beam)
-    #if (np.array(sky)<0).any():
-    #    return np.inf
+    #这个prior只是为了确保不出现非物理的天空亮温度值，去掉之后似乎不影响求解
     prior=np.sum(((np.array(sky)<0).astype(float)*sky)**2)
     result=np.sum(resid(sky, spec_param, Ta, beam, normalized_f)**2)+prior
     print(result, spec_param)
