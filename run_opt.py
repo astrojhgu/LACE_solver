@@ -8,7 +8,7 @@ from scipy.linalg import lstsq
 from scipy.sparse.linalg import lsqr,cg,bicg,lgmres,gmres
 from scipy.optimize import fmin_powell
 
-nsky=20
+nsky=10
 #用于求解的天空角度划分
 angles_sol=np.linspace(1e-6, np.pi, nsky)
 #用于模拟的天空角度划分
@@ -30,6 +30,10 @@ alpha0=-2.7
 
 #频率f0上的天空模型
 sky_model=1000.0*np.exp(-(angles_sim-np.pi/4)**2/(2*np.radians(20.0)**2))
+
+#Teor
+Teor=-0.1*np.exp(-(freqs-100e6)**2/(2*10e6**2))
+#Teor=0
 
 
 def calc_f_matrix(f, n):
@@ -59,8 +63,6 @@ p_sol=dipole_ant.normalized_dipole_beam(angles_sol,freqs, ant_len)  #用于求�
 #    p_sol[i,:]=b
 
 
-Teor=-0.1*np.exp(-(freqs-100e6)**2/(2*10e6**2))
-#Teor=0
 
 #模拟观测得到的24小时平均天线温度谱
 Ta=(p_sim@sky_model)*calc_spec_profile(normalized_f, [alpha0, 0])+Teor
@@ -78,20 +80,25 @@ def split_params(x, beam):
 def fobj(x, *args):
     Ta, beam, normalized_f=args
     sky, spec_param=split_params(x, beam)
-    if (np.array(sky)<0).any():
-        return np.inf
-    result=np.sum(resid(sky, spec_param, Ta, beam, normalized_f)**2)
+    #if (np.array(sky)<0).any():
+    #    return np.inf
+    prior=np.sum(((np.array(sky)<0).astype(float)*sky)**2)
+    result=np.sum(resid(sky, spec_param, Ta, beam, normalized_f)**2)+prior
     print(result, spec_param)
     return result
 
-answer=list(sky_model)+[alpha0, 0] #will not be used 
+answer=list(sky_model)+[alpha0, 0, 0] #will not be used 
 
 x0=[500.0]*nsky+[alpha0+0.2, 0, 0]
 print(fobj(x0, Ta, p_sol, normalized_f))
 
-solution=fmin_powell(fobj, x0, args=(Ta, p_sol, normalized_f), ftol=1e-15)
-solution=fmin_powell(fobj, solution, args=(Ta, p_sol, normalized_f), ftol=1e-20)
+solution=fmin_powell(fobj, x0, args=(Ta, p_sol, normalized_f), ftol=1e-15, maxiter=(1<<32))
 sky, spec_param=split_params(solution, p_sol)
 
 plt.plot(freqs/1e6, (Ta-(p_sol@sky)*calc_spec_profile(normalized_f, spec_param))*1e3)
+plt.xlabel("freq (MHz)")
+plt.ylabel("resid (mK)")
+
+plt.show()
+plt.plot(sky)
 plt.show()
