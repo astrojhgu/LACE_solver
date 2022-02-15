@@ -32,7 +32,7 @@ alpha0=-2.7
 sky_model=1000.0*np.exp(-(angles_sim-np.pi/4)**2/(2*np.radians(20.0)**2))
 
 #Teor
-Teor=-0.1*np.exp(-(freqs-100e6)**2/(2*10e6**2))
+Teor=-0.15*np.exp(-(freqs-90e6)**2/(2*10e6**2))
 #Teor=0
 
 
