@@ -40,7 +40,7 @@ sky_model=1000.0*np.exp(-(angles_sim-np.pi/4)**2/(2*np.radians(20.0)**2))
 sky_func=interp1d(angles_sim, sky_model)
 
 #Teor
-Teor=-0.15*np.exp(-(freqs-90e6)**2/(2*10e6**2))
+#Teor=-0.15*np.exp(-(freqs-90e6)**2/(2*10e6**2))
 Teor=0
 
 
