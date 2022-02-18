@@ -14,6 +14,9 @@ angles_sim=np.linspace(1e-6, np.pi, 1000)
 #频率通道
 freqs=np.linspace(50,199,1024)*1e6
 
+df=freqs[1]-freqs[0]
+dt=10*24*3600.0
+
 f0=100e6
 
 #偶极天线长度

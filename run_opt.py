@@ -6,6 +6,7 @@ import matplotlib.pylab as plt
 import dipole_ant
 from scipy.linalg import lstsq
 from scipy.sparse.linalg import lsqr,cg,bicg,lgmres,gmres
+from scipy.interpolate import interp1d
 from scipy.optimize import fmin_powell
 
 nsky=10
@@ -13,8 +14,13 @@ nsky=10
 angles_sol=np.linspace(1e-6, np.pi, nsky)
 #用于模拟的天空角度划分
 angles_sim=np.linspace(1e-6, np.pi, 1000)
+#angles_sim=angles_sol
 #频率通道
 freqs=np.linspace(50,199,1024)*1e6
+
+df=freqs[1]-freqs[0]
+dt=10.0*24*3600.0
+
 
 f0=100e6
 
@@ -31,9 +37,11 @@ alpha0=-2.7
 #频率f0上的天空模型
 sky_model=1000.0*np.exp(-(angles_sim-np.pi/4)**2/(2*np.radians(20.0)**2))
 
+sky_func=interp1d(angles_sim, sky_model)
+
 #Teor
-Teor=-0.15*np.exp(-(freqs-90e6)**2/(2*10e6**2))
-#Teor=0
+#Teor=-0.15*np.exp(-(freqs-90e6)**2/(2*10e6**2))
+Teor=0
 
 
 def calc_f_matrix(f, n):
@@ -56,6 +64,10 @@ def calc_spec_profile(f, coeff):
 p_sim=dipole_ant.normalized_dipole_beam(angles_sim, freqs, ant_len) #用于模拟的
 p_sol=dipole_ant.normalized_dipole_beam(angles_sol,freqs, ant_len)  #用于求解的
 
+print(p_sim)
+#print(((p_sol-p_sim)==0).all())
+#sys.exit()
+
 #p_sol=np.zeros((len(freqs), len(angles_sol)))
 #for i in range(0, p_sol.shape[0]):
 #    b=dipole_ant.normalized_dipole_beam(angles_sol, freqs[i], ant_len)*np.sin#(angles_sol)+np.random.normal(scale=0.00001, size=len(angles_sol))**2
@@ -68,7 +80,9 @@ p_sol=dipole_ant.normalized_dipole_beam(angles_sol,freqs, ant_len)  #用于求�
 Ta=(p_sim@sky_model)*calc_spec_profile(normalized_f, [alpha0, 0])+Teor
 
 def resid(sky, spec_param , Ta, beam, normalized_f):
-    result=((beam@sky)*calc_spec_profile(normalized_f, spec_param)-Ta)
+    T_model=(beam@sky)*calc_spec_profile(normalized_f, spec_param)
+    err=T_model/(dt*df)**0.5
+    result=(T_model-Ta)/err
     return result
 
 def split_params(x, beam):
@@ -86,10 +100,19 @@ def fobj(x, *args):
     print(result, spec_param)
     return result
 
-answer=list(sky_model)+[alpha0, 0, 0] #will not be used 
 
-x0=[500.0]*nsky+[alpha0+0.2, 0, 0]
+#print((p_sim@sky_model)*calc_spec_profile(normalized_f, [alpha0, 0])-Ta)
+#print(resid(sky0, [alpha0, 0], Ta, p_sol, normalized_f))
+
+
+#sky0=[sky_func(a) for a in angles_sol]
+sky0=sky_func(angles_sol)
+print(sky0)
+
+x0=list(sky0)+[alpha0, 0, 0, 0]
+print(x0)
 print(fobj(x0, Ta, p_sol, normalized_f))
+
 
 solution=fmin_powell(fobj, x0, args=(Ta, p_sol, normalized_f), ftol=1e-15, maxiter=(1<<32))
 sky, spec_param=split_params(solution, p_sol)
